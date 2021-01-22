@@ -1,0 +1,369 @@
+*.unselectable {
+    -moz-user-select: -moz-none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+  
+    /*
+      Introduced in IE 10.
+      See http://ie.microsoft.com/testdrive/HTML5/msUserSelect/
+    */
+    -ms-user-select: none;
+    user-select: none;
+  }
+  
+.game-board {
+    width: 512px;
+    height: 512px;
+    position: relative;
+    background-image: url('./assets/board.png');
+    background-repeat: no-repeat;
+    background-size: 512px 512px;
+}
+
+.flipped{
+    background-image: url('./assets/board-flipped.png');
+}
+
+.piece, .valid,
+.capture, .previous-move,
+.hover, .highlight,
+.moving-piece {
+    position: absolute;
+    height: 64px;
+    width: 64px;
+}
+
+.piece {
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    z-index: 1;
+}
+
+.valid{
+    background-color: rgba(0,0,0,.15);
+    clip-path: circle(20% at 50% 50%);
+}
+
+.capture {
+    background-color: rgba(0,0,0,.15);
+    clip-path: circle(50% at 50% 50%);
+}
+
+.previous-move{
+    background-color: rgba(62, 111, 245, 0.3);
+}
+
+.hover{
+    outline: solid black 2px;
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+}
+
+.highlight{
+    background-color: rgba(255, 34, 34, 0.4);
+}
+
+.moving-piece{
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    z-index: 10;
+}
+
+.captured-pieces-top,
+.captured-pieces-bottom{
+    display: flex;
+    width: 100%;
+    height: 5vh;
+}
+
+.captured-p, .captured-n, .captured-b, .captured-r,
+.captured-q {
+    display: flex;
+}
+
+.captured{
+    height: 32px;
+    width: 32px;
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    padding: 0%;
+    margin-right: -2%;
+}
+.left-game-panel, 
+.right-game-panel{
+    width: 20vw;
+    height: 100vh;
+    margin-top: 20px;
+}
+
+.view-box{
+    display: flex;
+}
+
+.arrows{
+    position: absolute;
+    z-index: 2;
+}
+
+.game-moves{
+    height: 60vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    width: 150px;
+    background-color: rgb(165, 165, 165);
+    cursor: pointer;
+}
+
+.info-button{
+    font-size: large;
+    color: white;
+    background-color: rgb(97, 97, 97);
+    border: none;
+    margin-top: 10px;
+}
+
+.wp {
+    background-image: url('./assets/pieces/white_pawn.png');
+}
+.bp {
+    background-image: url('./assets/pieces/black_pawn.png');
+}
+.wk {
+    background-image: url('./assets/pieces/white_king.png');
+}
+.bk {
+    background-image: url('./assets/pieces/black_king.png');
+}
+.wq {
+    background-image: url('./assets/pieces/white_queen.png');
+}
+.bq {
+    background-image: url('./assets/pieces/black_queen.png');
+}
+.wr {
+    background-image: url('./assets/pieces/white_rook.png');
+}
+.br {
+    background-image: url('./assets/pieces/black_rook.png');
+}
+.wn {
+    background-image: url('./assets/pieces/white_knight.png');
+}
+.bn {
+    background-image: url('./assets/pieces/black_knight.png');
+}
+.wb {
+    background-image: url('./assets/pieces/white_bishop.png');
+}
+.bb {
+    background-image: url('./assets/pieces/black_bishop.png');
+}
+
+
+/* 1st rank */
+.square-00, .flipped > .square-77{
+    transform: translate(0%, 700%);
+}
+.square-01, .flipped > .square-76{
+    transform: translate(100%, 700%);
+}
+.square-02, .flipped > .square-75{
+    transform: translate(200%, 700%);
+}
+.square-03, .flipped > .square-74{
+    transform: translate(300%, 700%);
+}
+.square-04, .flipped > .square-73{
+    transform: translate(400%, 700%);
+}
+.square-05, .flipped > .square-72{
+    transform: translate(500%, 700%);
+}
+.square-06, .flipped > .square-71{
+    transform: translate(600%, 700%);
+}
+.square-07, .flipped > .square-70{
+    transform: translate(700%, 700%);
+}
+
+/* 2nd rank */
+.square-10, .flipped > .square-67{
+    transform: translate(0%, 600%);
+}
+.square-11, .flipped > .square-66{
+    transform: translate(100%, 600%);
+}
+.square-12, .flipped > .square-65{
+    transform: translate(200%, 600%);
+}
+.square-13, .flipped > .square-64{
+    transform: translate(300%, 600%);
+}
+.square-14, .flipped > .square-63{
+    transform: translate(400%, 600%);
+}
+.square-15, .flipped > .square-62{
+    transform: translate(500%, 600%);
+}
+.square-16, .flipped > .square-61{
+    transform: translate(600%, 600%);
+}
+.square-17, .flipped > .square-60{
+    transform: translate(700%, 600%);
+}
+
+/* 3rd rank */
+.square-20, .flipped > .square-57{
+    transform: translate(0%, 500%);
+}
+.square-21, .flipped > .square-56{
+    transform: translate(100%, 500%);
+}
+.square-22, .flipped > .square-55{
+    transform: translate(200%, 500%);
+}
+.square-23, .flipped > .square-54{
+    transform: translate(300%, 500%);
+}
+.square-24, .flipped > .square-53{
+    transform: translate(400%, 500%);
+}
+.square-25, .flipped > .square-52{
+    transform: translate(500%, 500%);
+}
+.square-26, .flipped > .square-51{
+    transform: translate(600%, 500%);
+}
+.square-27, .flipped > .square-50{
+    transform: translate(700%, 500%);
+}
+
+/* 4th rank */
+.square-30, .flipped > .square-47{
+    transform: translate(0%, 400%);
+}
+.square-31, .flipped > .square-46{
+    transform: translate(100%, 400%);
+}
+.square-32, .flipped > .square-45{
+    transform: translate(200%, 400%);
+}
+.square-33, .flipped > .square-44{
+    transform: translate(300%, 400%);
+}
+.square-34, .flipped > .square-43{
+    transform: translate(400%, 400%);
+}
+.square-35, .flipped > .square-42{
+    transform: translate(500%, 400%);
+}
+.square-36, .flipped > .square-41{
+    transform: translate(600%, 400%);
+}
+.square-37, .flipped > .square-40{
+    transform: translate(700%, 400%);
+}
+
+/* 5th rank */
+.square-40, .flipped > .square-37{
+    transform: translate(0%, 300%);
+}
+.square-41, .flipped > .square-36{
+    transform: translate(100%, 300%);
+}
+.square-42, .flipped > .square-35{
+    transform: translate(200%, 300%);
+}
+.square-43, .flipped > .square-34{
+    transform: translate(300%, 300%);
+}
+.square-44, .flipped > .square-33{
+    transform: translate(400%, 300%);
+}
+.square-45, .flipped > .square-32{
+    transform: translate(500%, 300%);
+}
+.square-46, .flipped > .square-31{
+    transform: translate(600%, 300%);
+}
+.square-47, .flipped > .square-30{
+    transform: translate(700%, 300%);
+}
+
+/*6th rank */
+.square-50, .flipped > .square-27{
+    transform: translate(0%, 200%);
+}
+.square-51, .flipped > .square-26{
+    transform: translate(100%, 200%);
+}
+.square-52, .flipped > .square-25{
+    transform: translate(200%, 200%);
+}
+.square-53, .flipped > .square-24{
+    transform: translate(300%, 200%);
+}
+.square-54, .flipped > .square-23{
+    transform: translate(400%, 200%);
+}
+.square-55, .flipped > .square-22{
+    transform: translate(500%, 200%);
+}
+.square-56, .flipped > .square-21{
+    transform: translate(600%, 200%);
+}
+.square-57, .flipped > .square-20{
+    transform: translate(700%, 200%);
+}
+
+/*7th rank */
+.square-60, .flipped > .square-17{
+    transform: translate(0%, 100%);
+}
+.square-61, .flipped > .square-16{
+    transform: translate(100%, 100%);
+}
+.square-62, .flipped > .square-15{
+    transform: translate(200%, 100%);
+}
+.square-63, .flipped > .square-14{
+    transform: translate(300%, 100%);
+}
+.square-64, .flipped > .square-13{
+    transform: translate(400%, 100%);
+}
+.square-65, .flipped > .square-12{
+    transform: translate(500%, 100%);
+}
+.square-66, .flipped > .square-11{
+    transform: translate(600%, 100%);
+}
+.square-67, .flipped > .square-10{
+    transform: translate(700%, 100%);
+}
+
+/*8th rank */
+.square-70, .flipped > .square-07{
+    transform: translate(0%, 0%);
+}
+.square-71, .flipped > .square-06{
+    transform: translate(100%, 0%);
+}
+.square-72, .flipped > .square-05{
+    transform: translate(200%, 0%);
+}
+.square-73, .flipped > .square-04{
+    transform: translate(300%, 0%);
+}
+.square-74, .flipped > .square-03{
+    transform: translate(400%, 0%);
+}
+.square-75, .flipped > .square-02{
+    transform: translate(500%, 0%);
+}
+.square-76, .flipped > .square-01 {
+    transform: translate(600%, 0%);
+}
+.square-77, .flipped > .square-00{
+    transform: translate(700%, 0%);
+}
