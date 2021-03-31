@@ -10,6 +10,8 @@ class Chess{
         this.capturedBlackPieces = [];
         this.moves = [];
         this.board = Array(8);
+        this.whiteToMove = true;
+        this.halfMoveClock = 0;
         for(let i=0; i<this.board.length; i++){
             this.board[i] = Array(8).fill(null);
         }
@@ -210,6 +212,12 @@ class Chess{
             }
         }
         this.moves.push(currentMove);
+        if(this.board[endRank][endFile].type === "pawn" || this.capturedPiece !== null){
+            this.halfMoveClock = 0;
+        }else{
+            this.halfMoveClock++;
+        }
+        this.whiteToMove = !this.whiteToMove;
     }
 
     getFile(file){
@@ -313,6 +321,77 @@ class Chess{
             line += this.moves[i] + " ";
         }
         return line.substring(0, line.length-1);
+    }
+
+    getFENString(){
+        let stringBoard = this.getStringBoard(this.board);
+        let ret = "";
+        for(let rank=7; rank>=0; rank--){
+            let nullCounter = 0;
+            for(let file=0; file<stringBoard[rank].length; file++){
+                if(stringBoard[rank][file] !== null){
+                    if(nullCounter > 0){
+                        ret += nullCounter + "";
+                    }
+                    if(stringBoard[rank][file][0] === "w"){
+                        ret += stringBoard[rank][file][1].toUpperCase();
+                    }else{
+                        ret += stringBoard[rank][file][1];
+                    }
+                    nullCounter = 0;
+                }else{
+                    nullCounter++;
+                }
+            }
+            if(nullCounter > 0){
+                ret += nullCounter + "";
+            }
+            if(rank !== 0){
+                ret+= "/"
+            }
+        }
+        if(this.whiteToMove){
+            ret += " w ";
+        }else{
+            ret += " b ";
+        }
+        let whiteCastleQueen = stringBoard[0][0] === "wr" && this.board[0][0].firstMove && 
+        stringBoard[0][4] === "wk" && this.board[0][4].firstMove;
+        let whiteCastleKing = stringBoard[0][7] === "wr" && this.board[0][7].firstMove && 
+        stringBoard[0][4] === "wk" && this.board[0][4].firstMove;
+        let blackCastleQueen = stringBoard[7][0] === "br" && this.board[7][0].firstMove && 
+        stringBoard[7][4] === "bk" && this.board[7][4].firstMove;
+        let blackCastleKing = stringBoard[7][7] === "br" && this.board[7][7].firstMove && 
+        stringBoard[7][4] === "bk" && this.board[7][4].firstMove;
+        if(!whiteCastleKing && !whiteCastleQueen && !blackCastleKing && !blackCastleQueen){
+            ret += "-";
+        }else {
+            if(whiteCastleKing){
+                ret += "K";
+            }
+            if(whiteCastleQueen){
+                ret += "Q";
+            }
+            if(blackCastleKing){
+                ret += "k";
+            }
+            if(blackCastleQueen){
+                ret += "q";
+            }
+        }
+        if(this.enPassantSquare === -100){
+            ret += " - ";
+        }else{
+            ret += " " + this.getSquareName(parseInt(this.enPassantSquare[0]), parseInt(this.enPassantSquare[1])) + " ";
+        }
+
+        ret += this.halfMoveClock + " ";
+
+        let fullMoves = Math.ceil(this.moves.length/2);
+
+        ret += fullMoves + "";
+
+        return ret;
     }
 }
 
@@ -655,7 +734,7 @@ class Pawn{
         this.color = color;
         this.name = color + "p";
         this.firstMove = true;
-        this.pawn = "pawn";
+        this.type = "pawn";
     }
 
     getValidSquares(rank, file, board, enPassantSquare){

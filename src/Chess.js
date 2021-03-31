@@ -2,6 +2,7 @@ import React from 'react';
 import { Plus, ChevronLeft, ChevronRight, ChevronDoubleLeft, ChevronDoubleRight, ArrowCounterclockwise} from 'react-bootstrap-icons';
 import './Chess.css';
 import {Chess} from './ChessGame.js';
+import axios from 'axios';
 
 const jsdom = require("jsdom");
 const { JSDOM } = jsdom;
@@ -356,7 +357,17 @@ class Game extends React.Component {
             })
             .catch(() => console.log("Can’t access " + url + " response. Blocked by browser?"))
         }
-        console.log(this.state.currentOpening);
+        let FENString = this.game.getFENString();
+        console.log(FENString);
+        axios
+        .post('http://localhost:9000/testAPI', {string: FENString})
+        .then(() => console.log('Stockfish used'))
+        .catch(err => {
+          console.error(err);
+        });
+        /*fetch('http://localhost:9000/testAPI')
+        .then(res => res.text())
+        .then(res => console.log(res));*/
     }
 
     jumpTo(moveNumber){
