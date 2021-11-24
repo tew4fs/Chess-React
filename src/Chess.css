@@ -39,6 +39,11 @@
     z-index: 1;
 }
 
+.promotion {
+    z-index: 2;
+    background-color: white;
+}
+
 .valid{
     background-color: rgba(0,0,0,.15);
     clip-path: circle(20% at 50% 50%);
@@ -109,7 +114,7 @@
     height: 60vh;
     overflow-y: auto;
     overflow-x: hidden;
-    width: 150px;
+    /*width: 150px;*/
     background-color: rgb(165, 165, 165);
     cursor: pointer;
 }
@@ -134,28 +139,36 @@
 .bk {
     background-image: url('./assets/pieces/black_king.png');
 }
-.wq {
+.wq,
+.promotion-wq{
     background-image: url('./assets/pieces/white_queen.png');
 }
-.bq {
+.bq,
+.promotion-bq {
     background-image: url('./assets/pieces/black_queen.png');
 }
-.wr {
+.wr,
+.promotion-wr {
     background-image: url('./assets/pieces/white_rook.png');
 }
-.br {
+.br,
+.promotion-br {
     background-image: url('./assets/pieces/black_rook.png');
 }
-.wn {
+.wn,
+.promotion-wn {
     background-image: url('./assets/pieces/white_knight.png');
 }
-.bn {
+.bn,
+.promotion-bn {
     background-image: url('./assets/pieces/black_knight.png');
 }
-.wb {
+.wb,
+.promotion-wb {
     background-image: url('./assets/pieces/white_bishop.png');
 }
-.bb {
+.bb,
+.promotion-bb {
     background-image: url('./assets/pieces/black_bishop.png');
 }
 

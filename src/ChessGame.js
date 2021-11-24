@@ -97,7 +97,7 @@ class Chess{
         return true;
     }
 
-    setPiece(startRank, startFile, endRank, endFile){
+    setPiece(startRank, startFile, endRank, endFile, promotionPiece){
         let ambiguityChar = "";
         if(this.board[startRank][startFile].name[1] !== "p"){
             let stringBoard = this.getStringBoard(this.board);
@@ -153,26 +153,46 @@ class Chess{
         }
         if(this.board[endRank][endFile].name === "wp"){
             if(endRank === 7){
-                this.board[endRank][endFile] = new Queen("w");
+                if(promotionPiece === "q"){
+                    this.board[endRank][endFile] = new Queen("w");
+                }else if(promotionPiece === "r"){
+                    this.board[endRank][endFile] = new Rook("w");
+                }else if(promotionPiece === "b"){
+                    this.board[endRank][endFile] = new Bishop("w");
+                }else if(promotionPiece === "n"){
+                    this.board[endRank][endFile] = new Knight("w");
+                }
             }
             if(this.enPassantSquare === endRank+""+endFile){
                 this.capturedPiece = this.board[endRank-1][endFile].name;
                 this.board[endRank-1][endFile] = null;
             }
-            if(this.board[endRank][endFile].firstMove && endRank === 3){
+            if(this.board[endRank][endFile].firstMove && endRank === 3 && 
+                ((endFile > 0 && this.board[endRank][endFile-1] !== null && this.board[endRank][endFile-1].name === "bp") || 
+                (endFile < 7 && this.board[endRank][endFile+1] != null && this.board[endRank][endFile+1].name === "bp"))){
                 this.enPassantSquare = (endRank-1)+""+endFile;
             }else{
                 this.enPassantSquare = -100;
             }
         }else if(this.board[endRank][endFile].name === "bp"){
             if(endRank === 0){
-                this.board[endRank][endFile] = new Queen("b");
+                if(promotionPiece === "q"){
+                    this.board[endRank][endFile] = new Queen("b");
+                }else if(promotionPiece === "r"){
+                    this.board[endRank][endFile] = new Rook("b");
+                }else if(promotionPiece === "b"){
+                    this.board[endRank][endFile] = new Bishop("b");
+                }else if(promotionPiece === "n"){
+                    this.board[endRank][endFile] = new Knight("b");
+                }
             }
             if(this.enPassantSquare === endRank+""+endFile){
                 this.capturedPiece = this.board[endRank+1][endFile].name;
                 this.board[endRank+1][endFile] = null;
             }
-            if(this.board[endRank][endFile].firstMove && endRank === 4){
+            if(this.board[endRank][endFile].firstMove && endRank === 4 && 
+                ((endFile > 0 && this.board[endRank][endFile-1] !== null && this.board[endRank][endFile-1].name === "wp") || 
+                (endFile < 7 && this.board[endRank][endFile+1] != null && this.board[endRank][endFile+1].name === "wp"))){
                 this.enPassantSquare = (endRank+1)+""+endFile;
             }else{
                 this.enPassantSquare = -100;
@@ -194,7 +214,7 @@ class Chess{
         }else if(castleQueen){
             currentMove = "O-O-O";
         }else{
-            if(this.board[endRank][endFile].name[1] !== "p"){
+            if(this.board[endRank][endFile].name[1] !== "p" && promotionPiece === ""){
                 currentMove += this.board[endRank][endFile].name[1].toUpperCase() + ambiguityChar;
             }else if(this.capturedPiece !== null){
                 currentMove += this.getFile(startFile);
@@ -203,6 +223,15 @@ class Chess{
                 currentMove += "x"
             }
             currentMove += this.getSquareName(endRank, endFile);
+            if(promotionPiece === "q"){
+                currentMove += "=Q";
+            }else if(promotionPiece === "r"){
+                currentMove += "=R";
+            }else if(promotionPiece === "b"){
+                currentMove += "=B";
+            }else if(promotionPiece === "n"){
+                currentMove += "=N";
+            }
             if(this.inCheck(this.board[endRank][endFile].name[0]==="w"?"b":"w", this.board, this.getStringBoard(this.board))){
                 if(this.isCheckMate(this.board[endRank][endFile].name[0]==="w"?"b":"w")){
                     currentMove += "#";
@@ -323,7 +352,7 @@ class Chess{
         return line.substring(0, line.length-1);
     }
 
-    getFENString(){
+    getEPDString(){
         let stringBoard = this.getStringBoard(this.board);
         let ret = "";
         for(let rank=7; rank>=0; rank--){
@@ -380,19 +409,34 @@ class Chess{
             }
         }
         if(this.enPassantSquare === -100){
-            ret += " - ";
+            ret += " -";
         }else{
             ret += " " + this.getSquareName(parseInt(this.enPassantSquare[0]), parseInt(this.enPassantSquare[1])) + " ";
         }
 
-        ret += this.halfMoveClock + " ";
+        return ret;
+    }
+
+    getFENString(){
+        let ret = this.getEPDString();
+        ret += " " + this.halfMoveClock + " ";
 
         let fullMoves = Math.ceil(this.moves.length/2);
 
         ret += fullMoves + "";
-
         return ret;
     }
+
+    readEPDString(str){
+        let split = str.split(' ');
+        let board = split[0];
+        let toMove = split[1];
+        let castling = split[2];
+        
+        let enPassant = split[3];
+        this.enPassantSquare = this.getFile(enPassant[0])+""(enPassant[1]-1);
+    }
+
 }
 
 class King{

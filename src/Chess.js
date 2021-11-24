@@ -2,10 +2,9 @@ import React from 'react';
 import { Plus, ChevronLeft, ChevronRight, ChevronDoubleLeft, ChevronDoubleRight, ArrowCounterclockwise} from 'react-bootstrap-icons';
 import './Chess.css';
 import {Chess} from './ChessGame.js';
-import axios from 'axios';
-
-const jsdom = require("jsdom");
-const { JSDOM } = jsdom;
+import {HighlightsAndArrows} from './HightlightsAndArrows.js';
+import {dragMouseDownZero, dragMouseDownTwo} from './MouseActions.js';
+import {OpeningBook} from './OpeningBook.js';
 
 class Board extends React.Component{
     render(){
@@ -33,12 +32,24 @@ class Board extends React.Component{
             return previousMove;
         }
 
-        let gameBoardClassName = this.props.flipBoard ? "flipped game-board" : "game-board";
+        let flipped = this.props.flipBoard ? "flipped " : "";
         
         return (
-            <div className={gameBoardClassName}  onMouseDown={this.props.onMouseDown} onContextMenu={(e)=> e.preventDefault()}>
+            <div className={flipped + "game-board"}   onMouseDown={this.props.onMouseDown} onContextMenu={(e)=> e.preventDefault()}>
                 <div className="hover" id="hover-square" style={{visibility: "hidden"}}></div>
                 <div className="moving-piece" id="moving-piece" style={{visibility: "hidden"}}></div>
+                <div className={flipped + "promotion-white"} style={{visibility: "hidden"}}>
+                    <div className="promotion-wq" id="promotion-wq"></div>
+                    <div className="promotion-wr" id="promotion-wr"></div>
+                    <div className="promotion-wb" id="promotion-wb"></div>
+                    <div className="promotion-wn" id="promotion-wn"></div>
+                </div>
+                <div className={flipped + "promotion-black"} style={{visibility: "hidden"}}>
+                    <div className="promotion-bq" id="promotion-bq"></div>
+                    <div className="promotion-br" id="promotion-br"></div>
+                    <div className="promotion-bb" id="promotion-bb"></div>
+                    <div className="promotion-bn" id="promotion-bn"></div>
+                </div>
                 {renderSquares()}
                 {previousMove()}
                 <svg viewBox="0 0 80 80" className="arrows" id="canvas"></svg>
@@ -51,6 +62,9 @@ class Game extends React.Component {
     constructor(props){
         super(props);
         this.game = new Chess();
+        this.highlightsAndArrows = new HighlightsAndArrows();
+        this.openingBook = new OpeningBook();
+        this.openingBook.getOpenings();
         this.state = {
             history: [{
                 squares: this.game.getStringBoard(this.game.board),
@@ -64,6 +78,18 @@ class Game extends React.Component {
             gameStatus: "White to move",
             moves: [],
             currentOpening: "",
+            promotion: ""
+        };
+    }
+
+    addKeyListeners(obj){
+        document.onkeydown = (event) => {
+            if(event.key === "ArrowLeft") {
+                obj.jumpTo(obj.state.moveNumber>0?obj.state.moveNumber-1:0);
+            }
+            else if(event.key === "ArrowRight") {
+                obj.jumpTo(obj.state.moveNumber<obj.state.history.length-1?obj.state.moveNumber+1:obj.state.history.length-1);
+            }
         };
     }
 
@@ -71,14 +97,7 @@ class Game extends React.Component {
         let e = window.event;
         let obj = this;
         if(e.button === 0){
-            let highlights = document.querySelectorAll(".highlight");
-            highlights.forEach(element => {
-                element.remove();
-            });
-            let arrows = document.querySelectorAll("line");
-            arrows.forEach(element => {
-            element.remove();
-            });
+            this.highlightsAndArrows.removeHighlightsAndArrows()
             let board = document.getElementsByClassName("game-board")[0];
             let hoverSquare = document.getElementById("hover-square");
             let rank = Math.floor((board.offsetHeight - (e.pageY - board.offsetTop)) / hoverSquare.offsetHeight);
@@ -87,6 +106,14 @@ class Game extends React.Component {
             file = this.state.flipBoard ? 7-file : file;
             let startRank = rank;
             let startFile = file;
+            let promotions = document.querySelectorAll(`.square-${startRank}${startFile}.piece.promotion`);
+            if(promotions.length > 0){
+                this.promote(promotions[0].id, startFile)
+                return;
+            }
+            this.setState({promotion: startRank+""+startFile});
+            promotions = document.querySelectorAll(`.promotion`);
+            promotions.forEach(element => element.style.visibility = "hidden");
             let pieces = document.querySelectorAll(`.square-${startRank}${startFile}.piece`);
             let piece;
             if(pieces.length === 0){
@@ -113,60 +140,10 @@ class Game extends React.Component {
                 board.appendChild(valid);
             }
 
-            dragMouseDown(e);
-            function dragMouseDown(e) {
-                e = e || window.event;
-                e.preventDefault();
-                document.onmouseup = closeDragElement;
-                document.onmousemove = elementDrag;
-              }
-            
-              function elementDrag(e) {
-                e = e || window.event;
-                e.preventDefault();
-                let xPos = e.pageX - board.offsetLeft;
-                let yPos = e.pageY - board.offsetTop;
-                movingPiece.style.top = (yPos - movingPiece.offsetHeight/2) + "px";
-                movingPiece.style.left = (xPos - movingPiece.offsetWidth/2) + "px";
-                rank = Math.floor((board.offsetHeight - yPos) / piece.offsetHeight);
-                file = Math.floor(xPos / piece.offsetWidth);
-                rank = obj.state.flipBoard ? 7-rank : rank;
-                file = obj.state.flipBoard ? 7-file : file;
-                if(rank < 8 && rank >= 0 && file < 8 && file >= 0){
-                    hoverSquare.style.visibility = "visible";
-                    hoverSquare.className = "hover square-" + rank + "" + file;
-                }else{
-                    hoverSquare.style.visibility = "hidden";
-                }
-              }
-            
-              function closeDragElement(e) {
-                document.onmouseup = null;
-                document.onmousemove = null;
-                let endRank = rank;
-                let endFile = file;
-                let valids = document.querySelectorAll(".valid");
-                valids.forEach(element => {
-                    element.remove();
-                });
-                let validCaptures = document.querySelectorAll(".capture");
-                validCaptures.forEach(element => {
-                    element.remove();
-                });
-                hoverSquare.style.visibility = "hidden";
-                movingPiece.style.visibility = "hidden";
-                piece.style.visibility = "visible";
-                let validMove = false;
-                for(let i=0; i<validSquares.length; i++){
-                    if(validSquares[i] === endRank+""+endFile){
-                        validMove = true;
-                    }
-                }
-                if(validMove){
-                    obj.setPiece(startRank, startFile, endRank, endFile);
-                }
-              }
+            dragMouseDownZero(e, movingPiece, piece, hoverSquare, startRank, startFile, board, validSquares, obj);
         }else if(e.button === 2){
+            let promotions = document.querySelectorAll(`.promotion`);
+            promotions.forEach(element => element.style.visibility = "hidden");
             let board = document.getElementsByClassName("game-board")[0];
             let piece = document.getElementById("moving-piece");
             let rank = Math.floor((board.offsetHeight - (e.pageY - board.offsetTop)) / piece.offsetHeight);
@@ -175,121 +152,105 @@ class Game extends React.Component {
             file = this.state.flipBoard ? 7-file : file;
             let startRank = rank;
             let startFile = file;
-            dragMouseDown(e);
-            function dragMouseDown(e) {
-                e = e || window.event;
-                e.preventDefault();
-                document.onmouseup = closeDragElement;
-                document.onmousemove = elementDrag;
-              }
-            
-              function elementDrag(e) {
-                e = e || window.event;
-                e.preventDefault();
-                let xPos = e.pageX - board.offsetLeft;
-                let yPos = e.pageY - board.offsetTop;
-                rank = Math.floor((board.offsetHeight - yPos) / piece.offsetHeight);
-                file = Math.floor(xPos / piece.offsetWidth);
-                rank = obj.state.flipBoard ? 7-rank : rank;
-                file = obj.state.flipBoard ? 7-file : file;
-              }
-            
-              function closeDragElement(e) {
-                document.onmouseup = null;
-                document.onmousemove = null;
-                let endRank = rank;
-                let endFile = file;
-                if(startRank === endRank && startFile === endFile){
-                    let alreadyHighlighted = document.querySelectorAll(`.highlight.square-${startRank}${startFile}`);
-                    if(alreadyHighlighted.length > 0){
-                        alreadyHighlighted[0].remove();
-                    }else{
-                        let highlight = document.createElement('div');
-                        highlight.className = "highlight square-"+endRank+""+endFile;
-                        board.appendChild(highlight);
-                    }
-                }else if (endFile >= 0 && endFile < 8 && endRank >= 0 && endRank < 8){
-                    let oldArrow = document.getElementById("arrow" + startRank + "" + startFile + "" + endRank + "" + endFile);
-                    let canvas = document.getElementById('canvas');
-                    if (oldArrow === null){
-                        var svgns = "http://www.w3.org/2000/svg";
-                        
-                        let define = document.createElementNS(svgns, "defs");
-                        let arrowHead = document.createElementNS(svgns, 'marker');
-                        arrowHead.id="arrowhead";
-                        arrowHead.setAttributeNS(null, "markerWidth", "10");
-                        arrowHead.setAttributeNS(null, "markerHeight", "7");
-                        arrowHead.setAttributeNS(null, "refX", "2");
-                        arrowHead.setAttributeNS(null, "refY", "2.5");
-                        arrowHead.setAttributeNS(null, "orient", "auto");
-                        let points = document.createElementNS(svgns, 'polygon');
-                        points.setAttributeNS(null, 'style', 'fill: rgba(255, 170, 0, 0.9);');
-                        points.setAttributeNS(null, "points", "-2 0, 3 2.5, -2 5");
-                        arrowHead.appendChild(points);
-                        define.appendChild(arrowHead);
-                        let arrow = document.createElementNS(svgns, 'line');
-                        arrow.id="arrow"+ startRank + "" + startFile + "" + endRank + "" + endFile;
-                        if(obj.state.flipBoard){
-                            let xIncrementStart = 5;
-                            let xIncrementEnd = 5;
-                            if(startFile > endFile){
-                                xIncrementStart = 7.5;
-                                xIncrementEnd = 4;
-                            }else if(startFile < endFile){
-                                xIncrementStart = 2.5;
-                                xIncrementEnd = 6;
-                            }
-                            let yIncrementStart = 5;
-                            let yIncrementEnd = 5;
-                            if(startRank > endRank){
-                                yIncrementStart = 2.5;
-                                yIncrementEnd = 6;
-                            }else if(startRank < endRank){
-                                yIncrementStart = 7.5;
-                                yIncrementEnd = 4;
-                            }
-                            arrow.setAttributeNS(null, "x1", ((7-startFile) * 10)+xIncrementStart);
-                            arrow.setAttributeNS(null, "y1", ((startRank) * 10)+yIncrementStart);
-                            arrow.setAttributeNS(null, "x2", ((7-endFile) * 10)+xIncrementEnd);
-                            arrow.setAttributeNS(null, "y2", ((endRank) * 10)+yIncrementEnd);
-                        }else{
-                            let xIncrementStart = 5;
-                            let xIncrementEnd = 5;
-                            if(startFile > endFile){
-                                xIncrementStart = 2.5;
-                                xIncrementEnd = 6;
-                            }else if(startFile < endFile){
-                                xIncrementStart = 7.5;
-                                xIncrementEnd = 4;
-                            }
-                            let yIncrementStart = 5;
-                            let yIncrementEnd = 5;
-                            if(startRank > endRank){
-                                yIncrementStart = 7.5;
-                                yIncrementEnd = 4;
-                            }else if(startRank < endRank){
-                                yIncrementStart = 2.5;
-                                yIncrementEnd = 6;
-                            }
-                            arrow.setAttributeNS(null, "x1", (startFile * 10)+xIncrementStart);
-                            arrow.setAttributeNS(null, "y1", ((7-startRank) * 10)+yIncrementStart);
-                            arrow.setAttributeNS(null, "x2", (endFile * 10)+xIncrementEnd);
-                            arrow.setAttributeNS(null, "y2", ((7-endRank) * 10)+yIncrementEnd);
-                        }
-                        arrow.setAttributeNS(null, 'style', 'stroke: rgba(255, 170, 0, 0.9); stroke-width: 1.5px;');
-                        arrow.setAttributeNS(null, 'marker-end', "url(#arrowhead)");
-                        canvas.appendChild(define);
-                        canvas.appendChild(arrow);
-                    }else{
-                        oldArrow.remove();
-                    }
-                }
-              }
+            dragMouseDownTwo(e, piece, startRank, startFile, board, obj);
         }
     }
 
-    setPiece(startRank, startFile, endRank, endFile){
-        this.game.setPiece(startRank, startFile, endRank, endFile);
+    promote(piece, endFile){
+        let startRank = this.state.promotion[0];
+        let startFile = this.state.promotion[1]
+        let wq = document.getElementById("promotion-wq");
+        let wr = document.getElementById("promotion-wr");
+        let wb = document.getElementById("promotion-wb");
+        let wn = document.getElementById("promotion-wn");
+        wq.className = "promotion-wq";
+        wr.className = "promotion-wr";
+        wb.className = "promotion-wb";
+        wn.className = "promotion-wn";
+        let bq = document.getElementById("promotion-bq");
+        let br = document.getElementById("promotion-br");
+        let bb = document.getElementById("promotion-bb");
+        let bn = document.getElementById("promotion-bn");
+        bq.className = "promotion-bq";
+        br.className = "promotion-br";
+        bb.className = "promotion-bb";
+        bn.className = "promotion-bn";
+        if(piece === "promotion-wq"){
+            this.setPiece(startRank, startFile, 7, endFile, "q")
+        }else if(piece === "promotion-wr"){
+            this.setPiece(startRank, startFile, 7, endFile, "r")
+        }else if(piece === "promotion-wb"){
+            this.setPiece(startRank, startFile, 7, endFile, "b")
+        }else if(piece === "promotion-wn"){
+            this.setPiece(startRank, startFile, 7, endFile, "n")
+        }else if(piece === "promotion-bq"){
+            this.setPiece(startRank, startFile, 0, endFile, "q")
+        }else if(piece === "promotion-br"){
+            this.setPiece(startRank, startFile, 0, endFile, "r")
+        }else if(piece === "promotion-bb"){
+            this.setPiece(startRank, startFile, 0, endFile, "b")
+        }else if(piece === "promotion-bn"){
+            this.setPiece(startRank, startFile, 0, endFile, "n")
+        }
+        let promotions = document.querySelectorAll(`.promotion`);
+        promotions.forEach(element => element.style.visibility = "hidden");
+    }
+
+    promotionPrompt(startRank, startFile, endRank, endFile, color) {
+        let q;
+        let r;
+        let b;
+        let n;
+        if(color === "w"){
+            q = document.getElementById("promotion-wq");
+            r = document.getElementById("promotion-wr");
+            b = document.getElementById("promotion-wb");
+            n = document.getElementById("promotion-wn");
+            q.classList.add("square-"+endRank+endFile);
+            r.classList.add("square-"+(endRank-1)+endFile);
+            b.classList.add("square-"+(endRank-2)+endFile);
+            n.classList.add("square-"+(endRank-3)+endFile);
+        }else{
+            q = document.getElementById("promotion-bq");
+            r = document.getElementById("promotion-br");
+            b = document.getElementById("promotion-bb");
+            n = document.getElementById("promotion-bn");
+            q.classList.add("square-"+endRank+endFile);
+            r.classList.add("square-"+(endRank+1)+endFile);
+            b.classList.add("square-"+(endRank+2)+endFile);
+            n.classList.add("square-"+(endRank+3)+endFile);
+        }
+        q.style.visibility = "visible";
+        q.classList.add("piece");
+        q.classList.add("promotion");
+
+        r.style.visibility = "visible";
+        r.classList.add("piece");
+        r.classList.add("promotion");
+
+        b.style.visibility = "visible";
+        b.classList.add("piece");
+        b.classList.add("promotion");
+
+        n.style.visibility = "visible";
+        n.classList.add("piece");
+        n.classList.add("promotion");
+    }
+
+    setPiece(startRank, startFile, endRank, endFile, promotion=""){
+        if(promotion === ""){
+            if(this.game.board[startRank][startFile].name === "wp" && endRank === 7){
+                this.promotionPrompt(startRank, startFile, endRank, endFile, "w");
+                this.setState({promotion: startRank+""+startFile});
+                return;
+            }
+            if(this.game.board[startRank][startFile].name === "bp" && endRank === 0){
+                this.promotionPrompt(startRank, startFile, endRank, endFile, "b");
+                this.setState({promotion: startRank+""+startFile});
+                return;
+            }
+        }
+        this.game.setPiece(startRank, startFile, endRank, endFile, promotion);
         const history = this.state.history.slice(0, this.state.history.length);
         let squares = this.game.getStringBoard(this.game.board);
         let gameOver = false;
@@ -319,6 +280,9 @@ class Game extends React.Component {
             status = "Game is draw by repetition";
             gameOver = true;
         }
+        let EPDString = this.game.getEPDString();
+        let opening = this.openingBook.findOpening(EPDString);
+        opening = opening === "" ? this.state.currentOpening : opening; 
         this.setState({
             history: history.concat([{
                 squares: squares,
@@ -330,44 +294,9 @@ class Game extends React.Component {
             gameStatus: status,
             gameOver: gameOver,
             moves: this.game.moves,
+            promotion: "",
+            currentOpening: opening
         })
-        if(this.state.history.length < 10){
-            const proxyurl = "https://obscure-meadow-07599.herokuapp.com/";
-            const url = "https://www.365chess.com/eco.php";
-            let currentLine = this.game.getLine(); 
-            let opening = "";
-            fetch(proxyurl + url)
-            .then(response => response.text())
-            .then(contents => {
-                const dom = new JSDOM(contents);
-                let lines = dom.window.document.querySelectorAll(".line");
-                for(let i=0; i<lines.length; i++) {
-                    let line = lines[i].querySelector('.opmoves').textContent;
-                    if(line[line.length-1] === " "){
-                        line = line.substring(0, line.length-1);
-                    }
-                    if(currentLine === line){
-                        opening = lines[i].querySelector('.opname').textContent
-                        this.setState({
-                            currentOpening: opening,
-                        })
-                        break;
-                    }
-                }
-            })
-            .catch(() => console.log("Can’t access " + url + " response. Blocked by browser?"))
-        }
-        let FENString = this.game.getFENString();
-        console.log(FENString);
-        axios
-        .post('http://localhost:9000/testAPI', {string: FENString})
-        .then(() => console.log('Stockfish used'))
-        .catch(err => {
-          console.error(err);
-        });
-        /*fetch('http://localhost:9000/testAPI')
-        .then(res => res.text())
-        .then(res => console.log(res));*/
     }
 
     jumpTo(moveNumber){
@@ -404,6 +333,8 @@ class Game extends React.Component {
     }
 
     render () {
+        document.onkeydown = null;
+        this.addKeyListeners(this);
         let current = this.state.history[this.state.moveNumber];
         let capturedWhitePieces = this.game.capturedWhitePieces;
         let capturedBlackPieces = this.game.capturedBlackPieces;
@@ -440,49 +371,55 @@ class Game extends React.Component {
         });
         let moves = [];
         for(let i=0; i<this.state.moves.length; i+=2){
-            moves.push(<tr>
+            moves.push(
+            <tr>
                 <td>{Math.floor((i/2)+1)}</td>
                 <td onClick={() => this.jumpTo(i+1)} style={{color: this.state.moveNumber===i+1?"white":"black"}}>{this.state.moves[i]}</td>
                 <td onClick={() => this.jumpTo(i+2)} style={{color: this.state.moveNumber===i+2?"white":"black"}}>{this.state.moves[i+1]}</td>
             </tr>)
         }
+
+
       return (
-    <div className="view-box">
-        <div className='left-game-panel'></div>
-        <div className='game-view-box'>
-            <div className='captured-pieces-top'>
-                {topCapturedPieces}
+            <div className="container-fluid">
+                <div className="row">
+                    <div className='col-md-5'>
+                        <div className='captured-pieces-top'>
+                            {topCapturedPieces}
+                        </div>
+                        <Board 
+                        squares={current.squares}
+                        startSquare={current.startSquare}
+                        endSquare={current.endSquare}
+                        flipBoard={this.state.flipBoard}
+                        onMouseDown={() => this.handleMouseDown()}
+                        ></Board>
+                        <div className='captured-pieces-bottom'>
+                            {bottomCapturedPieces}
+                        </div>
+                    </div>
+                    <div className='col-md-3 ml-2'>
+                        <h2 className="text-center">{this.state.gameStatus}</h2>
+                        <h4 className="text-center">{this.state.currentOpening}</h4>
+                        <div className="game-moves container-fluid">
+                            <table className="table table-moves">
+                                <tbody>
+                                    {moves}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div>
+                            <button className="btn btn-primary text-light mt-3 mx-1" title="Go to beginning" onClick={() => this.jumpTo(0)}><ChevronDoubleLeft/></button>
+                            <button className="btn btn-primary text-light mt-3 mx-1" title="Go to previous move" onClick={() => this.jumpTo(this.state.moveNumber>0?this.state.moveNumber-1:0)}><ChevronLeft/></button>
+                            <button className="btn btn-primary text-light mt-3 mx-1" title="Go to next move" onClick={() => this.jumpTo(this.state.moveNumber<this.state.history.length-1?this.state.moveNumber+1:this.state.history.length-1)}><ChevronRight/></button>
+                            <button className="btn btn-primary text-light mt-3 mx-1" title="Go to end" onClick={() => this.jumpTo(this.state.history.length-1)}><ChevronDoubleRight/></button>
+                            <button className="btn btn-primary text-light mt-3 mx-1" title="Rotate board" onClick={() => this.flipBoard()}><ArrowCounterclockwise/></button>
+                            <button className="btn btn-primary text-light mt-3 mx-1" title="New game" onClick={() => this.resetBoard()}><Plus/></button>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <Board 
-            squares={current.squares}
-            startSquare={current.startSquare}
-            endSquare={current.endSquare}
-            flipBoard={this.state.flipBoard}
-            onMouseDown={() => this.handleMouseDown()}
-            ></Board>
-            <div className='captured-pieces-bottom'>
-                {bottomCapturedPieces}
-            </div>
-        </div>
-        <div className='right-game-panel'>
-            {this.state.gameStatus}
-            <div className="game-moves">
-                <table className="table-moves">
-                    {moves}
-                </table>
-            </div>
-            <div>
-                <button className="info-button" title="Go to beginning" onClick={() => this.jumpTo(0)}><ChevronDoubleLeft/></button>
-                <button className="info-button" title="Go to previous move" onClick={() => this.jumpTo(this.state.moveNumber>0?this.state.moveNumber-1:0)}><ChevronLeft/></button>
-                <button className="info-button" title="Go to next move" onClick={() => this.jumpTo(this.state.moveNumber<this.state.history.length-1?this.state.moveNumber+1:this.state.history.length-1)}><ChevronRight/></button>
-                <button className="info-button" title="Go to end" onClick={() => this.jumpTo(this.state.history.length-1)}><ChevronDoubleRight/></button>
-                <button className="info-button" title="Rotate board" onClick={() => this.flipBoard()}><ArrowCounterclockwise/></button>
-                <button className="info-button" title="New game" onClick={() => this.resetBoard()}><Plus/></button>
-            </div>
-            {this.state.currentOpening}
-        </div>
-      </div>
-      );
+        );
     }
   }
 
